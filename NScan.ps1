@@ -15,35 +15,44 @@ Clear-Host
  ''
  ''
  ''
-class strg {
-   [string]$ip
-   [string]$port
-   [int16]$protocol
-   [bool]$loopmain
 
-   [void]End_MaimLoop (){
-       $this.loopmain ='false'
-       write-host @('Couldnot find the inputed option : {0}' -f $this.protocol)
-   }
-}
-$strg= [strg]::new()
-$strg.ip = Read-Host 'IP addresss(es) '
-$strg.port = Read-Host 'Ports(s)'
+[string]$ip = Read-Host 'IP addresss(es) '
+[string]$port = Read-Host 'Ports(s)'
 
 'Protocols :'
 '           [1] TCP'
 '           [2] UDP'
-$strg.protocol = Read-host 'Protocol selection '
-$strg.loopmain = $false
-if ($protocol -eq '1'){
-    $strg.loopmain =  $true
+[int32]$protocol = Read-host 'Protocol '
+function ScanTCP
+{
+    param(
+        [string[]]$ip
+        [string[]]$port
+    )
+    $net = new-Object system.Net.Sockets.TcpClient
+    $connection = $net.ConnectAsync($ip , $port)
+    $opath = Get-Location
+    for($i=0; $i -lt 10; $i++) {
+      if ($connection.isCompleted) { break; }
+      Start-Sleep -milliseconds 100 
+    }
+    $net.Close()
+    if ($connection.isFaulted -and $connection.Exception -match "actively refused") {$response = "Closed"}
+    elseif ($connection.Status -eq "RanToCompletion") {$response = "Open"}
+    set-location $($opath.replace('Response','CodeBase') )
+    $output = '{0}:{1} is {2} at {3}' -f $ip, $port , $response ,  $((Get-Date).AddDays(6))
+    add-content -Path TCP.txt -Value $output 
+    write-host $output
+    set-locaton $opath
 }
-elseif ( $protocol -eq '2') {
-    $strg.loopmain =  $true}
-$strg.loopmain
-while ($strg.loopmain -eq $true) {
-    write-host 'running'
-    $strg.loopmain = $false
+if ($null-ne $ip  -or  $null -ne $protocol -or $null -ne $port  ){
+    switch ($protocol) {
+        1 {ScanTCP($ip , $port)}
+        2 {ScanUDP($ip , $port)}
+        default{write-host @('Couldnot find the inputed option : {0}' -f $protocol)}
+    }
 }
+function ScanUDP {
 
-Read-Host 'The program ended'
+}
+read-host
