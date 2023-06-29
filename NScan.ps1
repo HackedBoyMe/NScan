@@ -39,7 +39,7 @@ function ScanTCP
     $net.Close()
     if ($connection.isFaulted -and $connection.Exception -match "actively refused") {$response = "Closed"}
     elseif ($connection.Status -eq "RanToCompletion") {$response = "Open"}
-    set-location $($opath.replace('Response','CodeBase') )
+    set-location Response
     $output = '{0}:{1} is {2} at {3}' -f $ip, $port , $response ,  $((Get-Date).AddDays(6))
     add-content -Path TCP.txt -Value $output 
     write-host $output
